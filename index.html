@@ -43,6 +43,7 @@
   <div class="row">
     <input type="number" id="target" inputmode="numeric" placeholder="输入目标数字">
     <button class="go" onclick="solve()">求解</button>
+    <button class="go" style="background:#8a93a8" onclick="clearAll()">清空</button>
   </div>
   <div class="res" id="out"><p class="none">选题型 → 输目标 → 求解</p></div>
   <p class="hint">· 数字池 1-12 不重复，先乘除后加减<br>· 解已去重，按列表顺序照抄即可<br>· 10 秒没思路就猜一个提交，错了难度会降回来</p>
@@ -98,6 +99,11 @@ function solve(){
   out.innerHTML = res.length? res.map(r=>`<p>${r}</p>`).join('') : '<p class="none">此题型无解，换相邻题型试试（如 +□ 改 -□）</p>';
 }
 
+function clearAll(){
+  document.getElementById('target').value='';
+  document.getElementById('out').innerHTML='<p class="none">选题型 → 输目标 → 求解</p>';
+  document.getElementById('target').focus();
+}
 // tables
 function buildAdd3(){
   const map={};
