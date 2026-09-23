@@ -18,17 +18,23 @@ h1 small { font-size:11px; color:#98a2b3; font-weight:400; }
 .card { background:#fff; border-radius:14px; padding:12px; margin-bottom:10px; box-shadow:0 1px 4px rgba(20,40,80,.08); }
 .lbl { font-size:12px; color:#7a8699; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
 .lbl .tip { font-size:11px; color:#b6bfcc; }
-/* 图形行 */
-.shapes { display:flex; gap:8px; }
-.slot {
-  flex:1; aspect-ratio:1/1.06; border:2px solid #dfe5ee; border-radius:12px; background:#fafbfd;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-  cursor:pointer; position:relative;
+/* 图形面板：4 列（列=位置，和题目横排对应），每列竖着 4 个图形直选 */
+.pal { display:flex; gap:6px; }
+.pcol { flex:1; display:flex; flex-direction:column; gap:6px; }
+.phead { text-align:center; font-size:11px; color:#b6bfcc; font-weight:700; line-height:14px; }
+.pbtn {
+  height:44px; border:2px solid #dfe5ee; border-radius:10px; background:#fafbfd;
+  display:flex; align-items:center; justify-content:center;
 }
-.slot.on { border-color:#3576f6; background:#eef4ff; }
-.slot .shape { width:52%; height:52%; }
-.slot .num { font-size:11px; color:#98a2b3; font-weight:700; }
-.slot.on .num { color:#3576f6; }
+.pbtn.on { border-color:#3576f6; background:#eef4ff; }
+.pbtn .shape { width:24px; height:24px; }
+/* 双反推配对表 */
+.pairGrid { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-top:6px; }
+.pair {
+  border:1.5px solid #dfe5ee; border-radius:8px; background:#fafbfd; padding:4px 7px;
+  font-size:14px; font-weight:700; color:#1c2330; letter-spacing:1px;
+}
+.pair i { font-style:normal; color:#12b76a; padding:0 2px; }
 .shape { display:inline-block; }
 .sh-tri { background:#FFC531; clip-path:polygon(50% 4%, 98% 97%, 2% 97%); }
 .sh-cir { background:#3FAE4A; border-radius:50%; }
@@ -88,7 +94,7 @@ details.help b { color:#4a5568; }
 <h1>管道题极速版 <small>1三角 2圆 3方 4十字</small></h1>
 
 <div class="card">
-  <div class="lbl"><span>开始（最上排）</span><span class="tip">点一下换图形</span></div>
+  <div class="lbl"><span>开始（最上排）</span><span class="tip">每行点一个图形</span></div>
   <div class="shapes" id="startRow"></div>
 </div>
 
@@ -120,9 +126,10 @@ details.help b { color:#4a5568; }
 <details class="help">
   <summary>📖 用法（20 秒看懂）</summary>
   <ul>
-    <li>图形按<b>形状</b>填：1=黄三角 2=绿圆 3=红方块 4=蓝十字。</li>
+    <li>图形按<b>形状</b>填：1=黄三角 2=绿圆 3=红方块 4=蓝十字，每行点一下。</li>
     <li><b>选项行不用输</b>：只输固定层，到选项行的位置按 <b>跳过此层(出答案)</b>，答案自动反推。</li>
-    <li>拿显示的绿色代码去题目选项里找一样的那个就行；两层都是选项就按两次跳过。</li>
+    <li><b>两层都是 ？</b>：按两次跳过，会列出全部合法配对，选项里上下两行跟表里一组完全一样的就是答案。</li>
+    <li>一层选项的题：拿显示的绿色代码去选项里找一样的那个。</li>
     <li>无解 = 图形或固定层填错了，核对一遍。</li>
   </ul>
 </details>
@@ -191,26 +198,37 @@ var state = {
 
 function $(id){ return document.getElementById(id); }
 
-// ===== 图形行 =====
+// ===== 图形面板：每列一个位置，竖着选图形 =====
 function renderShapes(rowId, arr) {
   var box = $(rowId);
   box.innerHTML = '';
+  var pal = document.createElement('div');
+  pal.className = 'pal';
   for (var i = 0; i < 4; i++) {
     (function (i) {
-      var s = document.createElement('div');
-      s.className = 'slot' + (arr[i] ? ' on' : '');
-      var v = arr[i];
-      s.innerHTML = v
-        ? '<span class="shape ' + SHAPE_KEYS[v-1] + '"></span><span class="num">' + v + '</span>'
-        : '<span class="num" style="font-size:16px">?</span>';
-      s.addEventListener('click', function () {
-        arr[i] = (arr[i] + 1) % 5;
-        renderShapes(rowId, arr);
-        renderAnswer();
-      });
-      box.appendChild(s);
+      var col = document.createElement('div');
+      col.className = 'pcol';
+      var head = document.createElement('div');
+      head.className = 'phead';
+      head.textContent = '位置' + (i + 1);
+      col.appendChild(head);
+      for (var v = 1; v <= 4; v++) {
+        (function (v) {
+          var b = document.createElement('div');
+          b.className = 'pbtn' + (arr[i] === v ? ' on' : '');
+          b.innerHTML = '<span class="shape ' + SHAPE_KEYS[v-1] + '"></span>';
+          b.addEventListener('click', function () {
+            arr[i] = (arr[i] === v) ? 0 : v;   // 再点一下已选的可取消
+            renderShapes(rowId, arr);
+            renderAnswer();
+          });
+          col.appendChild(b);
+        })(v);
+      }
+      pal.appendChild(col);
     })(i);
   }
+  box.appendChild(pal);
 }
 
 // ===== 管道层 =====
@@ -363,7 +381,8 @@ function renderAnswer() {
     eff.pop(); map.pop();
   }
   var hasFilled = eff.some(function (c) { return c.length > 0; });
-  if (!sOK || !eOK || !hasFilled) {
+  var hasSkip = eff.some(function (c, ci) { return c.length === 0 && state.layers[map[ci]].skipped; });
+  if (!sOK || !eOK || (!hasFilled && !hasSkip)) {
     box.innerHTML = '<div class="none">填好上排、管道、下排自动出答案</div>';
     info.textContent = '';
     return;
@@ -385,10 +404,29 @@ function renderAnswer() {
   if (choiceDisp >= 0) pickDisp = choiceDisp;
 
   var ansHtml = '', optNote = '';
+  var freeList = [];
+  for (var fi = 0; fi < eff.length; fi++) if (res.free[fi]) freeList.push(fi);
   if (choiceDisp >= 0) {
     var n = eff[choiceDisp].indexOf(sol[choiceDisp]) + 1;
     optNote = '第' + (map[choiceDisp]+1) + '层 ' + eff[choiceDisp].length + ' 选 ' + n;
     pickCode = sol[choiceDisp];
+  } else if (freeList.length >= 2) {
+    // 两层都空（??题型）：列出全部合法配对，对号选项里上下两行
+    if (res.solutions.length === 1) {
+      var s1 = res.solutions[0];
+      ansHtml = '<div class="ans-code" style="font-size:24px;letter-spacing:2px;text-indent:2px">'
+        + '第' + (map[freeList[0]]+1) + '层=' + s1[freeList[0]] + '　第' + (map[freeList[1]]+1) + '层=' + s1[freeList[1]] + '</div>';
+    } else {
+      var f0 = freeList[0], f1 = freeList[1];
+      var sols = res.solutions.slice().sort(function (a, b) {
+        return (a[f0] + a[f1]).localeCompare(b[f0] + b[f1]);
+      });
+      var chips = sols.map(function (s2) {
+        return '<span class="pair">' + s2[f0] + '<i>·</i>' + s2[f1] + '</span>';
+      }).join('');
+      ansHtml = '<div class="ans-sub" style="margin:2px 0 0">选项里的两行就是一组配对（左=上层 右=下层），在表里找到它：</div>'
+        + '<div class="pairGrid">' + chips + '</div>';
+    }
   } else if (pickDisp >= 0 && res.free[pickDisp]) {
     optNote = '第' + (map[pickDisp]+1) + '层该是这个 → 选项里挑一样的';
     pickCode = sol[pickDisp];
@@ -397,7 +435,7 @@ function renderAnswer() {
   }
   if (pickCode) ansHtml += '<div class="ans-code">' + pickCode + '</div>';
   if (optNote) ansHtml += '<div class="ans-sub">' + optNote + '</div>';
-  if (res.solutions.length > 1) {
+  if (res.solutions.length > 1 && freeList.length < 2) {
     ansHtml += '<div class="ans-more">另有 ' + (res.solutions.length - 1) + ' 组合同样成立：'
       + res.solutions.slice(1, 4).map(function (s2) { return s2.join('→'); }).join('；')
       + (res.solutions.length > 4 ? ' …' : '') + '</div>';
