@@ -34,6 +34,12 @@ h1 { font-size: 19px; text-align: center; margin: 4px 0 12px; }
 }
 .slot.set { border-color: #3576f6; background: #eef4ff; }
 .slot.warn { border-color: #f59e0b; background: #fff8eb; }
+/* 官方同款图形：蓝十字 / 绿圆 / 红方块 / 黄三角 */
+.shape-icon { display: inline-block; width: 62%; height: 62%; }
+.sh-tri { background: #FFC531; clip-path: polygon(50% 6%, 97% 96%, 3% 96%); }
+.sh-cir { background: #3FAE4A; border-radius: 50%; }
+.sh-sqr { background: #E8432E; border-radius: 10%; }
+.sh-plus { background: #3B7CF0; clip-path: polygon(35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 35%, 35% 35%); }
 .layer { margin-bottom: 12px; }
 .layer-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .layer-tag { font-size: 12px; color: #fff; background: #64748b; border-radius: 6px; padding: 2px 8px; }
@@ -201,10 +207,11 @@ function solvePipe(start, end, layers) {
     return { solutions: solutions, free: free };
 }
 
-// 图形 emoji 与 id
-var PIPE_SHAPES = ['🔼', '🟠', '🟥', '➕', '⭐', '🔷'];
-var PIPE_SHAPE_NAMES = ['三角', '圆', '方', '十字', '星', '菱'];
-var PIPE_CLS_TO_ID = { triangle: 1, circle: 2, square: 3, plus: 4, star: 5, diamond: 6, hexagon: 6, pentagon: 6, crossx: 4, unknown: 0 };
+// 图形：与官方 switchChallenge 一致的 4 种固定颜色图形（CSS 类名渲染）
+// id 顺序：1=黄三角 2=绿圆 3=红方块 4=蓝十字
+var PIPE_SHAPES = ['sh-tri', 'sh-cir', 'sh-sqr', 'sh-plus'];
+var PIPE_SHAPE_NAMES = ['黄三角', '绿圆', '红方块', '蓝十字'];
+var PIPE_CLS_TO_ID = { triangle: 1, circle: 2, square: 3, plus: 4, crossx: 4, star: 0, diamond: 0, hexagon: 0, pentagon: 0, unknown: 0 };
 
 // ===== 识别核心 =====
 // ===== 管道题识别核心 A：灰度 / 积分图 / 自适应二值化 / 连通域 =====
@@ -1416,7 +1423,8 @@ function renderSlots(containerId, arr) {
     arr.forEach(function (v, i) {
         var d = document.createElement('div');
         d.className = 'slot' + (v ? ' set' : '');
-        d.textContent = v ? PIPE_SHAPES[v - 1] : '＋';
+        d.innerHTML = v ? '<span class="shape-icon ' + PIPE_SHAPES[v - 1] + '"></span>' : '＋';
+        d.title = v ? PIPE_SHAPE_NAMES[v - 1] : '';
         d.addEventListener('click', function () { openSheet(containerId, i); });
         box.appendChild(d);
     });
@@ -1504,10 +1512,10 @@ function openSheet(containerId, index) {
     $('sheetTitle').textContent = (containerId === 'startRow' ? '开始排第 ' : '最后排第 ') + (index + 1) + ' 个图形';
     var grid = $('sheetGrid');
     grid.innerHTML = '';
-    for (var i = 1; i <= 6; i++) {
+    for (var i = 1; i <= 4; i++) {
         (function (i) {
             var b = document.createElement('button');
-            b.textContent = PIPE_SHAPES[i - 1];
+            b.innerHTML = '<span class="shape-icon ' + PIPE_SHAPES[i - 1] + '"></span>';
             b.title = PIPE_SHAPE_NAMES[i - 1];
             if (state[containerId === 'startRow' ? 'start' : 'end'][index] === i) b.className = 'pick';
             b.addEventListener('click', function () {
